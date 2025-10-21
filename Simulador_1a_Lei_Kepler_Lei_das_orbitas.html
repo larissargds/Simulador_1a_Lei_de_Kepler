@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1ª Lei de Kepler - Órbitas Elípticas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            color: #333;
+            padding: 0;
+            margin: 0;
+        }
+            
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+       
+        .simulator-container {
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 0;
+            padding: 30px;
+            border: none;
+            margin: 0;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: radial-gradient(circle at center, #000428 0%, #000 100%);
+            box-shadow: 0 0 40px rgba(102, 126, 234, 0.6);
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 25px 0;
+        }
+        
+        .planet-control {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .planet1-control {
+            border-color: #4A90E2;
+        }
+        
+        .planet2-control {
+            border-color: #DC143C;
+        }
+        
+        .planet-control h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            color: white;
+        }
+        
+        .slider-container {
+            margin: 15px 0;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 1em;
+            color: white;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            background: rgba(102, 126, 234, 0.3);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .info-box {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+        
+        .info-planet1 {
+            background: rgba(74, 144, 226, 0.2);
+            border-left: 4px solid #4A90E2;
+        }
+        
+        .info-planet2 {
+            background: rgba(220, 20, 60, 0.2);
+            border-left: 4px solid #DC143C;
+        }
+        
+        .buttons {
+            text-align: center;
+            margin: 25px 0;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        
+        .legend-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+	<header>
+            <h1 style="color: #4A90E2;">Simulador: Primeira Lei de Kepler - Lei das Órbitas</h1>
+	</header>
+
+        <div class="simulator-container">
+            <canvas id="orbitCanvas" width="900" height="700"></canvas>
+                        
+            <div class="buttons">
+                <button onclick="startAnimation()">▶️ Iniciar</button>
+                <button onclick="pauseAnimation()">⏸️ Pausar</button>
+            </div>
+            
+            <div class="controls-grid">
+                <div class="planet-control planet1-control">
+                    <h3 style="color: #4A90E2;">🔵 Planeta 1 (Azul)</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Excentricidade:</span>
+                            <span class="value-display" id="ecc1Value">0.02</span>
+                        </div>
+                        <input type="range" class="slider" id="ecc1Slider" 
+                               min="0" max="99" value="2" 
+                               oninput="updateEccentricity(1, this.value)">
+                        <p style="font-size: 0.9em; color: #ccc; margin-top: 8px;">
+                            0.00 = círculo | 0.99 = muito alongada
+                        </p>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Tamanho da órbita (milhões de km):</span>
+                            <span class="value-display" id="size1Value">150</span>
+                        </div>
+                        <input type="range" class="slider" id="size1Slider" 
+                               min="100" max="280" value="150" 
+                               oninput="updateSize(1, this.value)">
+                    </div>
+                </div>
+                
+                <div class="planet-control planet2-control">
+                    <h3 style="color: #DC143C;">🔴 Planeta 2 (Vermelho)</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Excentricidade:</span>
+                            <span class="value-display" id="ecc2Value">0.09</span>
+                        </div>
+                        <input type="range" class="slider" id="ecc2Slider" 
+                               min="0" max="99" value="9" 
+                               oninput="updateEccentricity(2, this.value)">
+                        <p style="font-size: 0.9em; color: #ccc; margin-top: 8px;">
+                            0.00 = círculo | 0.99 = muito alongada
+                        </p>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Tamanho da órbita (milhões de km):</span>
+                            <span class="value-display" id="size2Value">228</span>
+                        </div>
+                        <input type="range" class="slider" id="size2Slider" 
+                               min="100" max="280" value="228" 
+                               oninput="updateSize(2, this.value)">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4 style="color: #667eea; margin-bottom: 15px;">📊 Dados das Órbitas</h4>
+                <div class="info-grid">
+                    <div class="info-item info-planet1">
+                        <strong style="color: #4A90E2;">Planeta 1:</strong><br>
+                        Periélio: <span id="peri1">140</span> milhões de km<br>
+                        Afélio: <span id="afe1">260</span> milhões de km
+                    </div>
+                    <div class="info-item info-planet2">
+                        <strong style="color: #DC143C;">Planeta 2:</strong><br>
+                        Periélio: <span id="peri2">100</span> milhões de km<br>
+                        Afélio: <span id="afe2">400</span> milhões de km
+                    </div>
+                </div>
+                <p style="margin-top: 15px; color: #666; font-size: 0.95em;">
+                    <strong>Periélio:</strong> ponto mais próximo do Sol | 
+                    <strong>Afélio:</strong> ponto mais distante do Sol
+                </p>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        const canvas = document.getElementById('orbitCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let animationId;
+        let isAnimating = false;
+        let angle1 = 0;
+        let angle2 = 0;
+        
+        // Dados dos planetas (baseados em Terra e Marte)
+        // Escala: 1 pixel = 1 milhão de km
+        let planet1 = {
+            eccentricity: 0.017, // Terra
+            semiMajorAxis: 150, // 149.598.023 km ≈ 150 milhões km
+            color: '#4A90E2',
+            size: 12,
+            realSemiMajor: 149598023, // km reais
+            realAphelion: 152097597,
+            realPerihelion: 147098450
+        };
+        
+        let planet2 = {
+            eccentricity: 0.093, // Marte
+            semiMajorAxis: 228, // 227.939.366 km ≈ 228 milhões km
+            color: '#DC143C',
+            size: 12,
+            realSemiMajor: 227939366, // km reais
+            realAphelion: 249261000,
+            realPerihelion: 206650000
+        };
+        
+        const sunX = canvas.width / 3; // Sol deslocado para a esquerda (1/3 da largura)
+        const sunY = canvas.height / 2;
+        
+        function updateEccentricity(planetNum, value) {
+            const ecc = value / 100;
+            
+            if (planetNum === 1) {
+                planet1.eccentricity = ecc;
+                document.getElementById('ecc1Value').textContent = ecc.toFixed(2);
+            } else {
+                planet2.eccentricity = ecc;
+                document.getElementById('ecc2Value').textContent = ecc.toFixed(2);
+            }
+            
+            drawOrbits();
+            updateInfo();
+        }
+        
+        function updateSize(planetNum, value) {
+            if (planetNum === 1) {
+                planet1.semiMajorAxis = parseInt(value);
+                document.getElementById('size1Value').textContent = value;
+            } else {
+                planet2.semiMajorAxis = parseInt(value);
+                document.getElementById('size2Value').textContent = value;
+            }
+            
+            drawOrbits();
+            updateInfo();
+        }
+        
+        function updateInfo() {
+            // Planeta 1 (usar valores reais quando disponível)
+            if (planet1.eccentricity === 0.017 && planet1.semiMajorAxis === 150) {
+                // Valores reais da Terra
+                document.getElementById('peri1').textContent = '147';
+                document.getElementById('afe1').textContent = '152';
+            } else {
+                const c1 = planet1.semiMajorAxis * planet1.eccentricity;
+                const peri1 = (planet1.semiMajorAxis - c1).toFixed(0);
+                const afe1 = (planet1.semiMajorAxis + c1).toFixed(0);
+                document.getElementById('peri1').textContent = peri1;
+                document.getElementById('afe1').textContent = afe1;
+            }
+            
+            // Planeta 2 (usar valores reais quando disponível)
+            if (planet2.eccentricity === 0.093 && planet2.semiMajorAxis === 228) {
+                // Valores reais de Marte
+                document.getElementById('peri2').textContent = '207';
+                document.getElementById('afe2').textContent = '249';
+            } else {
+                const c2 = planet2.semiMajorAxis * planet2.eccentricity;
+                const peri2 = (planet2.semiMajorAxis - c2).toFixed(0);
+                const afe2 = (planet2.semiMajorAxis + c2).toFixed(0);
+                document.getElementById('peri2').textContent = peri2;
+                document.getElementById('afe2').textContent = afe2;
+            }
+        }
+        
+        function drawStars() {
+            for (let i = 0; i < 150; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const size = Math.random() * 2;
+                const brightness = Math.random() * 0.8 + 0.2;
+                ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+                ctx.fillRect(x, y, size, size);
+            }
+        }
+        
+        function drawSun() {
+            // Sol
+            ctx.fillStyle = '#FDB813';
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#FDB813';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Raios do Sol
+            for (let i = 0; i < 12; i++) {
+                const rayAngle = (i * Math.PI / 6);
+                ctx.strokeStyle = 'rgba(253, 184, 19, 0.4)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(sunX, sunY);
+                ctx.lineTo(sunX + Math.cos(rayAngle) * 50, sunY + Math.sin(rayAngle) * 50);
+                ctx.stroke();
+            }
+            
+            // Label
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 3;
+            ctx.fillText('SOL', sunX, sunY + 55);
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawOrbit(planet, angle) {
+            const a = planet.semiMajorAxis;
+            const e = planet.eccentricity;
+            const c = a * e;
+            const b = Math.sqrt(a * a - c * c);
+            
+            // Centro da elipse (deslocado do Sol)
+            const centerX = sunX + c;
+            const centerY = sunY;
+            
+            // Desenhar órbita
+            ctx.strokeStyle = planet.color + '60';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, a, b, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Marcar focos
+            const focus1X = sunX;
+            const focus1Y = sunY;
+            const focus2X = sunX + 2 * c;
+            const focus2Y = sunY;
+            
+            // Foco 2 (vazio)
+            ctx.strokeStyle = planet.color + '40';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.arc(focus2X, focus2Y, 8, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Posição do planeta
+            const planetX = centerX + a * Math.cos(angle);
+            const planetY = centerY + b * Math.sin(angle);
+            
+            // Linha raio vetor
+            ctx.strokeStyle = planet.color + '80';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(sunX, sunY);
+            ctx.lineTo(planetX, planetY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Planeta
+            ctx.fillStyle = planet.color;
+            ctx.beginPath();
+            ctx.arc(planetX, planetY, planet.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Destaque
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(planetX, planetY, planet.size + 3, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Label do planeta
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 5;
+            ctx.fillText(planet.color === '#4A90E2' ? 'Planeta 1' : 'Planeta 2', 
+                        planetX, planetY + planet.size + 20);
+            ctx.shadowBlur = 0;
+            
+            // Marcar periélio e afélio
+            const periX = centerX - a;
+            const periY = centerY;
+            const afeX = centerX + a;
+            const afeY = centerY;
+            
+            ctx.fillStyle = planet.color;
+            ctx.globalAlpha = 0.6;
+            ctx.beginPath();
+            ctx.arc(periX, periY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(afeX, afeY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawOrbits() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawStars();
+            
+            // Desenhar órbitas (planeta 2 primeiro para ficar atrás)
+            drawOrbit(planet2, angle2);
+            drawOrbit(planet1, angle1);
+            
+            // Sol por último para ficar na frente
+            drawSun();
+        }
+        
+        function animate() {
+            if (isAnimating) {
+                drawOrbits();
+                
+                // Calcular velocidade baseada na distância ao Sol (2ª Lei de Kepler)
+                // Quanto mais perto do Sol, mais rápido
+                
+                // Planeta 1
+                const a1 = planet1.semiMajorAxis;
+                const e1 = planet1.eccentricity;
+                const c1 = a1 * e1;
+                const centerX1 = sunX + c1;
+                const centerY1 = sunY;
+                const planet1X = centerX1 + a1 * Math.cos(angle1);
+                const planet1Y = centerY1 + Math.sqrt(a1 * a1 - c1 * c1) * Math.sin(angle1);
+                const dist1 = Math.sqrt((planet1X - sunX) ** 2 + (planet1Y - sunY) ** 2);
+                const speed1 = 0.008 * (a1 / dist1); // Velocidade inversamente proporcional à distância
+                
+                // Planeta 2
+                const a2 = planet2.semiMajorAxis;
+                const e2 = planet2.eccentricity;
+                const c2 = a2 * e2;
+                const centerX2 = sunX + c2;
+                const centerY2 = sunY;
+                const planet2X = centerX2 + a2 * Math.cos(angle2);
+                const planet2Y = centerY2 + Math.sqrt(a2 * a2 - c2 * c2) * Math.sin(angle2);
+                const dist2 = Math.sqrt((planet2X - sunX) ** 2 + (planet2Y - sunY) ** 2);
+                const speed2 = 0.006 * (a2 / dist2); // Velocidade inversamente proporcional à distância
+                
+                angle1 += speed1;
+                angle2 += speed2;
+                
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        function startAnimation() {
+            isAnimating = true;
+            animate();
+        }
+        
+        function pauseAnimation() {
+            isAnimating = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        }
+        
+        function resetAnimation() {
+            angle1 = 0;
+            angle2 = 0;
+            pauseAnimation();
+            drawOrbits();
+        }
+        
+        // Inicializar
+        drawOrbits();
+        updateInfo();
+    </script>
+</body>
+</html>
